@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Flappy Earl</title>
     <style>
         body {
@@ -21,10 +22,12 @@
 <body>
 <canvas id="game"></canvas>
 <script>
+    // Jump logic (replace or extend your existing event listeners)
+
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
     canvas.width = window.innerWidth;
-    canvas.height = 300;
+    canvas.height = window.innerHeight * 0.6;
 
     const playerImg = new Image();
     playerImg.src = 'earl.jpg';
@@ -38,12 +41,14 @@
         { x: -10, y: 150, speed: 0.45 },
     ];
 
+    const baseUnit = canvas.width / 100;
+
     class Player {
         constructor() {
-            this.x = 50;
-            this.y = canvas.height - 60;
-            this.w = 40;
-            this.h = 40;
+            this.w = baseUnit * 4;
+            this.h = baseUnit * 4;
+            this.x = baseUnit * 5;
+            this.y = canvas.height - this.h;
             this.vy = 0;
             this.jumpCount = 0;
         }
@@ -51,12 +56,11 @@
         draw() {
             ctx.drawImage(playerImg, this.x, this.y, this.w, this.h);
             if (sayArayTimer > 0) {
-                const bubbleX = this.x + this.w + 10;
-                const bubbleY = this.y - this.h - 30;
+                const bubbleX = this.x + this.w - 10;
+                const bubbleY = this.y - this.h + 35;
                 const bubbleWidth = 60;
                 const bubbleHeight = 30;
 
-                // Draw rounded speech bubble
                 ctx.fillStyle = "#000";
                 ctx.beginPath();
                 ctx.moveTo(bubbleX + 10, bubbleY);
@@ -65,20 +69,17 @@
                 ctx.lineTo(bubbleX + bubbleWidth, bubbleY + bubbleHeight - 10);
                 ctx.quadraticCurveTo(bubbleX + bubbleWidth, bubbleY + bubbleHeight, bubbleX + bubbleWidth - 10, bubbleY + bubbleHeight);
                 ctx.lineTo(bubbleX + 20, bubbleY + bubbleHeight);
-                ctx.lineTo(bubbleX + 10, bubbleY + bubbleHeight + 10); // speech triangle
-                ctx.lineTo(bubbleX + 10, bubbleY + bubbleHeight);
+                ctx.lineTo(bubbleX + 10, bubbleY + bubbleHeight + 10);
                 ctx.lineTo(bubbleX + 10, bubbleY + bubbleHeight);
                 ctx.lineTo(bubbleX + 10, bubbleY + 10);
                 ctx.quadraticCurveTo(bubbleX + 10, bubbleY, bubbleX + 20, bubbleY);
                 ctx.closePath();
                 ctx.fill();
 
-                // Draw text inside
                 ctx.fillStyle = "#fff";
                 ctx.font = "16px monospace";
                 ctx.fillText("Aray!", bubbleX + 15, bubbleY + 20);
             }
-
         }
 
         update() {
@@ -94,7 +95,7 @@
 
         jump() {
             if (this.jumpCount < 2 && !gameOver) {
-                this.vy = -10;
+                this.vy = -baseUnit * .8;
                 this.jumpCount++;
             }
         }
@@ -102,8 +103,8 @@
 
     class Obstacle {
         constructor() {
-            this.w = 30;
-            this.h = Math.random() * 100 + 30;
+            this.w = baseUnit * 2.5;
+            this.h = Math.random() * baseUnit * 5 + baseUnit * 2;
             this.x = canvas.width;
             this.y = canvas.height;
         }
@@ -121,7 +122,7 @@
     const player = new Player();
     const obstacles = [];
     let nextSpawnIn = 100;
-    let obstacleSpeed = 4;
+    let obstacleSpeed = baseUnit * 0.5;
     let gravity = 0.4;
     let score = 0;
     let highScore = Number(localStorage.getItem('highScore') || 0);
@@ -135,7 +136,6 @@
         obstacles.push(new Obstacle());
         nextSpawnIn = Math.random() * 80 + 100;
     }
-
     function resetGame() {
         obstacles.length = 0;
         player.y = canvas.height - player.h;
@@ -146,38 +146,30 @@
         gameHasEnded = false;
         sayArayTimer = 0;
         gameOverDelay = 0;
-        obstacleSpeed = 4;
+        obstacleSpeed = baseUnit * 0.5;
         frameCount = 0;
     }
 
     function drawScore() {
-        // Shadow for contrast
         ctx.font = "bold 24px monospace";
         ctx.fillStyle = "#000";
-        ctx.fillText("Score: " + score, 11, 31); // shadow
-
+        ctx.fillText("Score: " + score, 11, 31);
         ctx.fillStyle = "#fff";
         ctx.fillText("Score: " + score, 10, 30);
 
-        // Shadow for contrast
-        ctx.font = "bold 24px monospace";
         ctx.fillStyle = "#000";
-        ctx.fillText("High Score: " + highScore, 11, 51); // shadow
-
+        ctx.fillText("High Score: " + highScore, 11, 51);
         ctx.fillStyle = "#fff";
         ctx.fillText("High Score: " + highScore, 10, 50);
-
     }
 
     function drawBackground() {
-        // Sky gradient
         const grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
         grd.addColorStop(0, '#87ceeb');
         grd.addColorStop(1, '#b0e0e6');
         ctx.fillStyle = grd;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Clouds
         ctx.fillStyle = "#ffffff88";
         clouds.forEach(cloud => {
             ctx.beginPath();
@@ -190,7 +182,6 @@
             if (cloud.x + 60 < 0) cloud.x = canvas.width + Math.random() * 100;
         });
 
-        // Ground
         ctx.fillStyle = "#444";
         ctx.fillRect(0, canvas.height - 2, canvas.width, 2);
     }
@@ -212,7 +203,7 @@
                     player.x + player.w > obs.x &&
                     player.y + player.h > obs.y - obs.h
                 ) {
-                    sayArayTimer = 60;
+                    sayArayTimer = 100;
                     gameOverDelay = 60;
                     gameOver = true;
                     if (score > highScore) {
@@ -237,7 +228,7 @@
 
             frameCount++;
             if (frameCount % 200 === 0) {
-                obstacleSpeed += 0.5;
+                obstacleSpeed += 0.2;
             }
 
         } else if (!gameHasEnded) {
@@ -257,11 +248,7 @@
             ctx.font = "32px monospace";
             ctx.fillText("Game Over", canvas.width / 2 - 100, canvas.height / 2);
             ctx.font = "16px monospace";
-            ctx.fillText(
-                "Press Space to Restart",
-                canvas.width / 2 - 100,
-                canvas.height / 2 + 30
-            );
+            ctx.fillText("Press Space to Restart", canvas.width / 2 - 100, canvas.height / 2 + 30);
         }
 
         requestAnimationFrame(loop);
@@ -276,7 +263,26 @@
             }
         }
     });
+    // document.addEventListener("tap", (e) => {
+    //     if (e.code === "Space") {
+    //         if (gameHasEnded) {
+    //             resetGame();
+    //         } else {
+    //             player.jump();
+    //         }
+    //     }
+    // });
+    function handleJump(){
+        if (gameHasEnded) {
+            resetGame();
+        } else {
+            player.jump();
+        }
+    }
 
+    document.addEventListener('keydown', handleJump);
+    document.addEventListener('touchstart', handleJump); // For mobile
+    // document.addEventListener('click', handleJump); // Optional for desktop clicks
     loop();
 </script>
 </body>
