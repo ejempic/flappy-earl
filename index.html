@@ -312,16 +312,6 @@
         requestAnimationFrame(loop);
     }
 
-    document.addEventListener("keydown", (e) => {
-        if (e.code === "Space") {
-            if (gameHasEnded) {
-                resetGame();
-            } else {
-                player.jump();
-            }
-        }
-    });
-
     function handleJump() {
         if (gameHasEnded) {
             resetGame();
