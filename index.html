@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Flappy Earl</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #87ceeb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = 300;
+
+    const playerImg = new Image();
+    playerImg.src = 'earl.jpg';
+
+    const clouds = [
+        { x: 100, y: 50, speed: 0.2 },
+        { x: 400, y: 30, speed: 0.15 },
+        { x: 700, y: 70, speed: 0.25 }
+    ];
+
+    class Player {
+        constructor() {
+            this.x = 50;
+            this.y = canvas.height - 60;
+            this.w = 40;
+            this.h = 40;
+            this.vy = 0;
+            this.jumpCount = 0;
+        }
+
+        draw() {
+            ctx.drawImage(playerImg, this.x, this.y, this.w, this.h);
+            if (sayArayTimer > 0) {
+                const bubbleX = this.x + this.w + 10;
+                const bubbleY = this.y - this.h - 30;
+                const bubbleWidth = 60;
+                const bubbleHeight = 30;
+
+                // Draw rounded speech bubble
+                ctx.fillStyle = "#000";
+                ctx.beginPath();
+                ctx.moveTo(bubbleX + 10, bubbleY);
+                ctx.lineTo(bubbleX + bubbleWidth - 10, bubbleY);
+                ctx.quadraticCurveTo(bubbleX + bubbleWidth, bubbleY, bubbleX + bubbleWidth, bubbleY + 10);
+                ctx.lineTo(bubbleX + bubbleWidth, bubbleY + bubbleHeight - 10);
+                ctx.quadraticCurveTo(bubbleX + bubbleWidth, bubbleY + bubbleHeight, bubbleX + bubbleWidth - 10, bubbleY + bubbleHeight);
+                ctx.lineTo(bubbleX + 20, bubbleY + bubbleHeight);
+                ctx.lineTo(bubbleX + 10, bubbleY + bubbleHeight + 10); // speech triangle
+                ctx.lineTo(bubbleX + 10, bubbleY + bubbleHeight);
+                ctx.lineTo(bubbleX + 10, bubbleY + bubbleHeight);
+                ctx.lineTo(bubbleX + 10, bubbleY + 10);
+                ctx.quadraticCurveTo(bubbleX + 10, bubbleY, bubbleX + 20, bubbleY);
+                ctx.closePath();
+                ctx.fill();
+
+                // Draw text inside
+                ctx.fillStyle = "#fff";
+                ctx.font = "16px monospace";
+                ctx.fillText("Aray!", bubbleX + 15, bubbleY + 20);
+            }
+
+        }
+
+        update() {
+            this.vy += gravity;
+            this.y += this.vy;
+
+            if (this.y + this.h >= canvas.height) {
+                this.y = canvas.height - this.h;
+                this.vy = 0;
+                this.jumpCount = 0;
+            }
+        }
+
+        jump() {
+            if (this.jumpCount < 2 && !gameOver) {
+                this.vy = -10;
+                this.jumpCount++;
+            }
+        }
+    }
+
+    class Obstacle {
+        constructor() {
+            this.w = 30;
+            this.h = Math.random() * 40 + 30;
+            this.x = canvas.width;
+            this.y = canvas.height;
+        }
+
+        update() {
+            this.x -= obstacleSpeed;
+        }
+
+        draw() {
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(this.x, this.y - this.h, this.w, this.h);
+        }
+    }
+
+    const player = new Player();
+    const obstacles = [];
+    let nextSpawnIn = 100;
+    let obstacleSpeed = 4;
+    let gravity = 0.4;
+    let score = 0;
+    let highScore = Number(localStorage.getItem('highScore') || 0);
+    let gameOver = false;
+    let gameHasEnded = false;
+    let gameOverDelay = 0;
+    let sayArayTimer = 0;
+    let frameCount = 0;
+
+    function spawnObstacle() {
+        obstacles.push(new Obstacle());
+        nextSpawnIn = Math.random() * 80 + 100;
+    }
+
+    function resetGame() {
+        obstacles.length = 0;
+        player.y = canvas.height - player.h;
+        player.vy = 0;
+        player.jumpCount = 0;
+        score = 0;
+        gameOver = false;
+        gameHasEnded = false;
+        sayArayTimer = 0;
+        gameOverDelay = 0;
+        obstacleSpeed = 4;
+        frameCount = 0;
+    }
+
+    function drawScore() {
+        // Shadow for contrast
+        ctx.font = "bold 24px monospace";
+        ctx.fillStyle = "#000";
+        ctx.fillText("Score: " + score, 11, 31); // shadow
+
+        ctx.fillStyle = "#fff";
+        ctx.fillText("Score: " + score, 10, 30);
+
+        // Shadow for contrast
+        ctx.font = "bold 24px monospace";
+        ctx.fillStyle = "#000";
+        ctx.fillText("High Score: " + highScore, 11, 51); // shadow
+
+        ctx.fillStyle = "#fff";
+        ctx.fillText("High Score: " + highScore, 10, 50);
+
+    }
+
+    function drawBackground() {
+        // Sky gradient
+        const grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        grd.addColorStop(0, '#87ceeb');
+        grd.addColorStop(1, '#b0e0e6');
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Clouds
+        ctx.fillStyle = "#ffffff88";
+        clouds.forEach(cloud => {
+            ctx.beginPath();
+            ctx.arc(cloud.x, cloud.y, 20, 0, Math.PI * 2);
+            ctx.arc(cloud.x + 20, cloud.y + 5, 25, 0, Math.PI * 2);
+            ctx.arc(cloud.x + 40, cloud.y, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            cloud.x -= cloud.speed;
+            if (cloud.x + 60 < 0) cloud.x = canvas.width + Math.random() * 100;
+        });
+
+        // Ground
+        ctx.fillStyle = "#444";
+        ctx.fillRect(0, canvas.height - 2, canvas.width, 2);
+    }
+
+    function loop() {
+        drawBackground();
+
+        if (!gameOver) {
+            player.update();
+            player.draw();
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.update();
+                obs.draw();
+
+                if (
+                    player.x < obs.x + obs.w &&
+                    player.x + player.w > obs.x &&
+                    player.y + player.h > obs.y - obs.h
+                ) {
+                    sayArayTimer = 60;
+                    gameOverDelay = 60;
+                    gameOver = true;
+                    if (score > highScore) {
+                        highScore = score;
+                        localStorage.setItem('highScore', highScore);
+                    }
+                }
+
+                if (obs.x + obs.w < 0) {
+                    obstacles.splice(i, 1);
+                    score++;
+                }
+            }
+
+            if (nextSpawnIn <= 0) {
+                spawnObstacle();
+            } else {
+                nextSpawnIn--;
+            }
+
+            drawScore();
+
+            frameCount++;
+            if (frameCount % 200 === 0) {
+                obstacleSpeed += 0.5;
+            }
+
+        } else if (!gameHasEnded) {
+            player.draw();
+            drawScore();
+            sayArayTimer--;
+            gameOverDelay--;
+
+            if (gameOverDelay <= 0) {
+                gameHasEnded = true;
+            }
+
+        } else {
+            player.draw();
+            drawScore();
+            ctx.fillStyle = "#f44336";
+            ctx.font = "32px monospace";
+            ctx.fillText("Game Over", canvas.width / 2 - 100, canvas.height / 2);
+            ctx.font = "16px monospace";
+            ctx.fillText(
+                "Press Space to Restart",
+                canvas.width / 2 - 100,
+                canvas.height / 2 + 30
+            );
+        }
+
+        requestAnimationFrame(loop);
+    }
+
+    document.addEventListener("keydown", (e) => {
+        if (e.code === "Space") {
+            if (gameHasEnded) {
+                resetGame();
+            } else {
+                player.jump();
+            }
+        }
+    });
+
+    loop();
+</script>
+</body>
+</html>
