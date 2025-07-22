@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Flappy Earl</title>
     <style>
@@ -14,15 +14,61 @@
             align-items: center;
             height: 100vh;
         }
+
         canvas {
             display: block;
         }
+
+        .rotate-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: black;
+            color: white;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+
     </style>
 </head>
 <body>
+<div id="rotate-warning" class="rotate-warning hidden">
+    <p>Please rotate your phone to landscape mode 📱↩️</p>
+</div>
+
 <canvas id="game"></canvas>
 <script>
-    // Jump logic (replace or extend your existing event listeners)
+    function isMobile() {
+        return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    }
+
+    function checkOrientation() {
+        const warning = document.getElementById('rotate-warning');
+        const isLandscape = window.innerWidth > window.innerHeight;
+
+        if (isMobile() && !isLandscape) {
+            warning.classList.remove('hidden');
+        } else {
+            warning.classList.add('hidden');
+        }
+    }
+
+    window.addEventListener('load', checkOrientation);
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+
 
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
@@ -33,12 +79,12 @@
     playerImg.src = 'earl.jpg';
 
     const clouds = [
-        { x: 100, y: 50, speed: 0.2 },
-        { x: 400, y: 30, speed: 0.15 },
-        { x: 700, y: 70, speed: 0.25 },
-        { x: 800, y: 200, speed: 0.15 },
-        { x: 1300, y: 50, speed: 0.2 },
-        { x: -10, y: 150, speed: 0.45 },
+        {x: 100, y: 50, speed: 0.2},
+        {x: 400, y: 30, speed: 0.15},
+        {x: 700, y: 70, speed: 0.25},
+        {x: 800, y: 200, speed: 0.15},
+        {x: 1300, y: 50, speed: 0.2},
+        {x: -10, y: 150, speed: 0.45},
     ];
 
     const baseUnit = canvas.width / 100;
@@ -55,12 +101,21 @@
 
         draw() {
             ctx.drawImage(playerImg, this.x, this.y, this.w, this.h);
+            console.log(isMobile())
             if (sayArayTimer > 0) {
-                const bubbleX = this.x + this.w - 10;
-                const bubbleY = this.y - this.h + 35;
                 const bubbleWidth = 60;
                 const bubbleHeight = 30;
 
+                // Center the bubble above the player
+                let bubbleX = this.x + player.w / 2 - bubbleWidth / 2;
+                let bubbleY = this.y - bubbleHeight - 10;
+
+                // Adjust further for mobile if needed
+                if (isMobile()) {
+                    bubbleY -= 20;
+                }
+
+                // Draw speech bubble shape
                 ctx.fillStyle = "#000";
                 ctx.beginPath();
                 ctx.moveTo(bubbleX + 10, bubbleY);
@@ -68,17 +123,20 @@
                 ctx.quadraticCurveTo(bubbleX + bubbleWidth, bubbleY, bubbleX + bubbleWidth, bubbleY + 10);
                 ctx.lineTo(bubbleX + bubbleWidth, bubbleY + bubbleHeight - 10);
                 ctx.quadraticCurveTo(bubbleX + bubbleWidth, bubbleY + bubbleHeight, bubbleX + bubbleWidth - 10, bubbleY + bubbleHeight);
+                ctx.lineTo(bubbleX + 30, bubbleY + bubbleHeight);
+                ctx.lineTo(bubbleX + 25, bubbleY + bubbleHeight + 10); // pointer
                 ctx.lineTo(bubbleX + 20, bubbleY + bubbleHeight);
-                ctx.lineTo(bubbleX + 10, bubbleY + bubbleHeight + 10);
                 ctx.lineTo(bubbleX + 10, bubbleY + bubbleHeight);
-                ctx.lineTo(bubbleX + 10, bubbleY + 10);
-                ctx.quadraticCurveTo(bubbleX + 10, bubbleY, bubbleX + 20, bubbleY);
+                ctx.quadraticCurveTo(bubbleX, bubbleY + bubbleHeight, bubbleX, bubbleY + bubbleHeight - 10);
+                ctx.lineTo(bubbleX, bubbleY + 10);
+                ctx.quadraticCurveTo(bubbleX, bubbleY, bubbleX + 10, bubbleY);
                 ctx.closePath();
                 ctx.fill();
 
+                // Draw text
                 ctx.fillStyle = "#fff";
                 ctx.font = "16px monospace";
-                ctx.fillText("Aray!", bubbleX + 15, bubbleY + 20);
+                ctx.fillText("Aray!", bubbleX + 12, bubbleY + 20);
             }
         }
 
@@ -263,16 +321,8 @@
             }
         }
     });
-    // document.addEventListener("tap", (e) => {
-    //     if (e.code === "Space") {
-    //         if (gameHasEnded) {
-    //             resetGame();
-    //         } else {
-    //             player.jump();
-    //         }
-    //     }
-    // });
-    function handleJump(){
+
+    function handleJump() {
         if (gameHasEnded) {
             resetGame();
         } else {
@@ -282,8 +332,8 @@
 
     document.addEventListener('keydown', handleJump);
     document.addEventListener('touchstart', handleJump); // For mobile
-    // document.addEventListener('click', handleJump); // Optional for desktop clicks
     loop();
+
 </script>
 </body>
 </html>
