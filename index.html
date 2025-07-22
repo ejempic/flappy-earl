@@ -32,7 +32,10 @@
     const clouds = [
         { x: 100, y: 50, speed: 0.2 },
         { x: 400, y: 30, speed: 0.15 },
-        { x: 700, y: 70, speed: 0.25 }
+        { x: 700, y: 70, speed: 0.25 },
+        { x: 800, y: 200, speed: 0.15 },
+        { x: 1300, y: 50, speed: 0.2 },
+        { x: -10, y: 150, speed: 0.45 },
     ];
 
     class Player {
@@ -179,7 +182,7 @@
         clouds.forEach(cloud => {
             ctx.beginPath();
             ctx.arc(cloud.x, cloud.y, 20, 0, Math.PI * 2);
-            ctx.arc(cloud.x + 20, cloud.y + 5, 25, 0, Math.PI * 2);
+            ctx.arc(cloud.x + 20, cloud.y - 5, 25, 0, Math.PI * 2);
             ctx.arc(cloud.x + 40, cloud.y, 20, 0, Math.PI * 2);
             ctx.fill();
 
